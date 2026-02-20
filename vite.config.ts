@@ -13,4 +13,7 @@ export default defineConfig({
   esbuild: {
     drop: ['console', 'debugger'], 
   },
+  build: {
+    chunkSizeWarningLimit: 1600, // සීමාව 1600kb දක්වා වැඩි කිරීම
+  },
 })
