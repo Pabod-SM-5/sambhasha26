@@ -49,7 +49,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
           <div className="mt-8 text-center space-y-4">
             {footer}
             <p className="text-[10px] text-neutral-600 tracking-widest uppercase">
-              © 2026 NCCU • Secure System
+              © 2026 NCCUStudios • Secure System
             </p>
           </div>
         )}
