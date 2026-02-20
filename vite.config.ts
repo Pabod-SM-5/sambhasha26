@@ -5,12 +5,23 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(),tailwindcss()],
-  build: {
-    // Chunk size සීමාව 1000kb දක්වා වැඩි කිරීම
+build: {
+    // 1. Chunk size warning එක මඟහැරීමට සීමාව වැඩි කිරීම
     chunkSizeWarningLimit: 1000,
+    
+    // 2. වඩාත් ප්‍රබල ලෙස කේතය පිරිසිදු කිරීමට Terser භාවිතා කිරීම
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        // සියලුම console logs සහ debugger statements ඉවත් කරයි
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+
     rollupOptions: {
       output: {
-        // විශාල libraries (උදා: Supabase, Vendor logs) වෙනම chunks ලෙස වෙන් කිරීම
+        // 3. විශාල Libraries වෙනම කොටස් වලට වෙන් කිරීම (Manual Chunking)
         manualChunks(id) {
           if (id.includes('node_modules')) {
             return id.toString().split('node_modules/')[1].split('/')[0].toString();
@@ -23,8 +34,5 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['/src/setupTests.ts'],
     globals: true,
-  },
-  esbuild: {
-    drop: ['console', 'debugger'], 
   },
 })
