@@ -32,26 +32,8 @@ const SystemLogs: React.FC = () => {
 
     fetchLogs();
 
-    // 2. Realtime Subscription
-    const channel = supabase
-      .channel('system_logs_monitor')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'system_logs' },
-        (payload) => {
-          if (isMounted) {
-            setLogs((prevLogs) => [payload.new, ...prevLogs]);
-          }
-        }
-      )
-      .subscribe();
-
     return () => {
       isMounted = false;
-      // Safely remove channel, catching error if socket closed
-      supabase.removeChannel(channel).catch(() => {
-        // Silent catch for production cleanup
-      });
     };
   }, []);
 

@@ -4,11 +4,16 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import SchoolProfile from './SchoolProfile';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
+import * as adminApi from '../../lib/adminApi';
 
 vi.mock('../../lib/supabaseClient', () => ({
   supabase: {
     from: vi.fn(),
   },
+}));
+
+vi.mock('../../lib/adminApi', () => ({
+  deleteCompetitorAdmin: vi.fn(),
 }));
 
 vi.mock('../../lib/logger', () => ({
@@ -28,14 +33,8 @@ const mockCompetitors = [
 ];
 
 describe('Admin SchoolProfile', () => {
-  let mockDelete: any;
-
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockDelete = vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null })
-    });
 
     (supabase.from as any).mockImplementation((table: string) => {
         if (table === 'profiles') {
@@ -53,11 +52,15 @@ describe('Admin SchoolProfile', () => {
                     eq: vi.fn().mockReturnValue({
                         order: vi.fn().mockResolvedValue({ data: mockCompetitors, error: null })
                     })
-                }),
-                delete: mockDelete
+                })
             };
         }
         return { select: vi.fn() };
+    });
+
+    (adminApi.deleteCompetitorAdmin as any).mockResolvedValue({
+        success: true,
+        message: 'Competitor deleted'
     });
   });
 
@@ -96,7 +99,7 @@ describe('Admin SchoolProfile', () => {
     fireEvent.click(confirmBtn);
 
     await waitFor(() => {
-        expect(mockDelete).toHaveBeenCalled();
+        expect(adminApi.deleteCompetitorAdmin).toHaveBeenCalledWith(101);
     });
   });
 });

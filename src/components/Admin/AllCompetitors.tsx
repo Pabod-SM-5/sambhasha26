@@ -26,13 +26,14 @@ const AllCompetitors: React.FC = () => {
             setCategories(['All Categories', ...uniqueCats]);
         }
 
-        // Fetch All Competitors with School Name
+        // Fetch All Competitors with School Info
         // We join with profiles table
         const { data, error } = await supabase
             .from('competitors')
             .select(`
                 *,
                 profiles (
+                    school_id,
                     school_name,
                     district
                 )
@@ -53,10 +54,12 @@ const AllCompetitors: React.FC = () => {
   const filteredCompetitors = competitors.filter(c => {
     const schoolName = c.profiles?.school_name || '';
     const district = c.profiles?.district || '';
+    const schoolId = c.profiles?.school_id || '';
     
     const matchesSearch = 
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         (c.contest_id && c.contest_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        schoolId.toLowerCase().includes(searchTerm.toLowerCase()) ||
         schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         district.toLowerCase().includes(searchTerm.toLowerCase());
 

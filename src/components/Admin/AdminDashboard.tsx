@@ -6,9 +6,11 @@ import CategoryManager from './CategoryManager';
 import SystemLogs from './SystemLogs';
 import SchoolProfile from './SchoolProfile';
 import AllCompetitors from './AllCompetitors';
+import ErrorBoundary from '../ErrorBoundary';
 import { LogOut, Terminal, Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logSystemAction } from '../../lib/logger';
+import { secureLogger } from '../../lib/secureLogs';
 
 const AdminDashboard: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -17,9 +19,14 @@ const AdminDashboard: React.FC = () => {
   const { signOut, user } = useAuth();
 
   const handleLogout = async () => {
-    await logSystemAction('ADMIN_LOGOUT', 'Administrator initiated logout');
-    await signOut();
-    navigate('/login');
+    try {
+      await logSystemAction('ADMIN_LOGOUT', 'Administrator initiated logout');
+      await signOut();
+      navigate('/login');
+    } catch (err) {
+      secureLogger.error('Admin logout error', { errorType: (err as Error)?.name });
+      navigate('/login');
+    }
   };
 
   // Helper to determine title based on path
@@ -84,14 +91,16 @@ const AdminDashboard: React.FC = () => {
 
          {/* Content Area */}
          <div className="p-4 md:p-10 max-w-[1800px] mx-auto pb-20">
-            <Routes>
+            <ErrorBoundary>
+              <Routes>
                 <Route path="/" element={<DashboardOverview />} />
                 <Route path="competitors" element={<AllCompetitors />} />
                 <Route path="categories" element={<CategoryManager />} />
                 <Route path="logs" element={<SystemLogs />} />
                 <Route path="school/:schoolId" element={<SchoolProfile />} />
                 <Route path="*" element={<Navigate to="" replace />} />
-            </Routes>
+              </Routes>
+            </ErrorBoundary>
          </div>
       </main>
     </div>

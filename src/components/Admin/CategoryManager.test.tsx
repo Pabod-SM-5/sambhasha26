@@ -3,11 +3,17 @@ import { render, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import CategoryManager from './CategoryManager';
 import { supabase } from '../../lib/supabaseClient';
+import * as adminApi from '../../lib/adminApi';
 
 vi.mock('../../lib/supabaseClient', () => ({
   supabase: {
     from: vi.fn(),
   },
+}));
+
+vi.mock('../../lib/adminApi', () => ({
+  addCategoryAdmin: vi.fn(),
+  deleteCategoryAdmin: vi.fn(),
 }));
 
 vi.mock('../../lib/logger', () => ({
@@ -19,16 +25,9 @@ const mockCategories = [
 ];
 
 describe('Admin CategoryManager', () => {
-  // ගෝලීයව Mock functions නිර්මාණය කිරීම
-  let mockInsert: any;
-  let mockDeleteEq: any;
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(window, 'confirm').mockImplementation(() => true);
-
-    mockInsert = vi.fn().mockResolvedValue({ error: null });
-    mockDeleteEq = vi.fn().mockResolvedValue({ error: null });
 
     (supabase.from as any).mockImplementation((table: string) => {
         if (table === 'categories') {
@@ -36,13 +35,20 @@ describe('Admin CategoryManager', () => {
                 select: vi.fn().mockReturnValue({
                     order: vi.fn().mockResolvedValue({ data: mockCategories, error: null })
                 }),
-                insert: mockInsert,
-                delete: vi.fn().mockReturnValue({
-                    eq: mockDeleteEq
-                })
             };
         }
         return { select: vi.fn() };
+    });
+
+    (adminApi.addCategoryAdmin as any).mockResolvedValue({
+        success: true,
+        message: 'Category added',
+        data: { id: 2 }
+    });
+
+    (adminApi.deleteCategoryAdmin as any).mockResolvedValue({
+        success: true,
+        message: 'Category deleted'
     });
   });
 
@@ -64,11 +70,7 @@ describe('Admin CategoryManager', () => {
     fireEvent.click(getByText(/ADD TO MATRIX/i));
 
     await waitFor(() => {
-        expect(mockInsert).toHaveBeenCalledWith([{
-            name: 'New Event',
-            code: '99',
-            division: 'Junior'
-        }]);
+        expect(adminApi.addCategoryAdmin).toHaveBeenCalledWith('New Event', '99', 'Junior');
     });
   });
 
@@ -81,7 +83,7 @@ describe('Admin CategoryManager', () => {
         fireEvent.click(deleteBtn);
         
         await waitFor(() => {
-            expect(mockDeleteEq).toHaveBeenCalledWith('id', 1);
+            expect(adminApi.deleteCategoryAdmin).toHaveBeenCalledWith(1);
         });
     } else {
         throw new Error("Delete button not found");

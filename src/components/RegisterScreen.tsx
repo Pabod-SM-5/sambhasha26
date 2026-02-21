@@ -3,6 +3,18 @@ import { ArrowRight, Building2, User, Lock, AlertCircle, Loader2, Mail } from 'l
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import AuthLayout from './AuthLayout';
+import PasswordCriteria from './PasswordCriteria';
+import { 
+  validatePassword, 
+  validateEmail, 
+  validateSchoolName, 
+  validatePhone,
+  validateName,
+  validateAddress,
+  validateDistrict 
+} from '../lib/validators';
+import { rateLimiter, rateLimits } from '../lib/rateLimiter';
+import { secureLogger } from '../lib/secureLogs';
 
 const RegisterScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -36,21 +48,99 @@ const RegisterScreen: React.FC = () => {
     setIsLoading(true);
     setErrorMsg(null);
 
-    // Basic Validation
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMsg("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
-    if (formData.password.length < 6) {
-        setErrorMsg("Password must be at least 6 characters");
+    try {
+      // ========== SECURITY: RATE LIMITING ==========
+      const rateLimit = rateLimits.registration(formData.email);
+      if (!rateLimiter.isAllowed(rateLimit.key, rateLimit.maxAttempts, rateLimit.windowMs)) {
+        const secondsRemaining = rateLimiter.getSecondsUntilReset(rateLimit.key);
+        setErrorMsg(`Too many registration attempts. Please try again in ${secondsRemaining} seconds.`);
         setIsLoading(false);
         return;
-    }
+      }
 
-    try {
-      // 0. Pre-check: Check if email already exists in profiles
+      // ========== VALIDATION: PASSWORDS ==========
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.valid) {
+        setErrorMsg(passwordValidation.error || 'Password validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        setErrorMsg("Passwords do not match");
+        setIsLoading(false);
+        return;
+      }
+
+      // ========== VALIDATION: EMAIL ==========
+      const emailValidation = validateEmail(formData.email);
+      if (!emailValidation.valid) {
+        setErrorMsg(emailValidation.error || 'Email validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      // ========== VALIDATION: SCHOOL DETAILS ==========
+      const schoolNameValidation = validateSchoolName(formData.schoolName);
+      if (!schoolNameValidation.valid) {
+        setErrorMsg(schoolNameValidation.error || 'School name validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      const districtValidation = validateDistrict(formData.district);
+      if (!districtValidation.valid) {
+        setErrorMsg(districtValidation.error || 'District validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      const phoneValidation = validatePhone(formData.phone);
+      if (!phoneValidation.valid) {
+        setErrorMsg(phoneValidation.error || 'Phone number validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      const addressValidation = validateAddress(formData.address);
+      if (!addressValidation.valid) {
+        setErrorMsg(addressValidation.error || 'Address validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      // ========== VALIDATION: PROFESSIONAL DETAILS ==========
+      const ticNameValidation = validateName(formData.ticName, 'Teacher-in-Charge Name');
+      if (!ticNameValidation.valid) {
+        setErrorMsg(ticNameValidation.error || 'TIC name validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      const ticContactValidation = validatePhone(formData.ticContact);
+      if (!ticContactValidation.valid) {
+        setErrorMsg('TIC contact must be a valid phone number');
+        setIsLoading(false);
+        return;
+      }
+
+      const coordinatorNameValidation = validateName(formData.coordinatorName, 'Coordinator Name');
+      if (!coordinatorNameValidation.valid) {
+        setErrorMsg(coordinatorNameValidation.error || 'Coordinator name validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      const coordinatorContactValidation = validatePhone(formData.coordinatorContact);
+      if (!coordinatorContactValidation.valid) {
+        setErrorMsg('Coordinator contact must be a valid phone number');
+        setIsLoading(false);
+        return;
+      }
+
+      // ========== DATABASE: CHECK IF EMAIL EXISTS ==========
+      // Note: This reveals user existence, but is necessary for good UX
+      // In production, consider constant-time comparison or delayed response
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('id')
@@ -58,10 +148,13 @@ const RegisterScreen: React.FC = () => {
         .maybeSingle();
 
       if (existingProfile) {
-        throw new Error("This email is already registered. Please login instead.");
+        setErrorMsg("An account with this email already exists. Please sign in instead.");
+        secureLogger.warn('Registration attempted with existing email', { email: formData.email });
+        setIsLoading(false);
+        return;
       }
 
-      // 1. Sign Up Auth User (v2 syntax)
+      // ========== AUTHENTICATION: SIGN UP ==========
       const { data: { user, session }, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -81,31 +174,40 @@ const RegisterScreen: React.FC = () => {
       });
 
       if (authError) {
-        if (authError.status === 429 || authError.message.includes('rate limit')) {
-           throw new Error("Too many registration attempts. Please wait a few minutes.");
+        // Generic error messages to prevent information disclosure
+        if (authError.status === 429) {
+           setErrorMsg("Server is temporarily busy. Please try again in a few minutes.");
+        } else if (authError.message.includes('rate limit')) {
+           setErrorMsg("Too many registration attempts. Please try again later.");
+        } else if (authError.message.includes('already registered')) {
+           setErrorMsg("This email is already registered. Please sign in instead.");
+        } else {
+           setErrorMsg("Registration failed. Please try again or contact support.");
         }
-        if (authError.message.includes('User already registered') || authError.message.includes('unique constraint')) {
-           throw new Error("This email is already registered. Please login instead.");
-        }
-        throw authError;
+        
+        secureLogger.error('Registration authentication error', { status: authError.status });
+        setIsLoading(false);
+        return;
       }
 
       if (user) {
-        // 2. Success Flow
-        // If session is null (email confirm enabled), we show success screen.
+        // ========== SUCCESS FLOW ==========
         if (!session) {
+            // Email verification required
             setSuccessState({ 
                 showed: true, 
                 email: formData.email
             });
+            secureLogger.info('User registered successfully - email verification pending', { userId: user.id });
         } else {
             // Auto-login
-            navigate('/user'); 
+            navigate('/user');
+            secureLogger.info('User registered and automatically logged in', { userId: user.id });
         }
       }
     } catch (error: any) {
-      console.error('Registration Error:', error);
-      setErrorMsg(error.message || 'Registration failed.');
+      secureLogger.error('Unexpected registration error', { errorType: error?.name });
+      setErrorMsg('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -208,11 +310,14 @@ const RegisterScreen: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-              <InputGroup label="Official Email" placeholder="mediaunit@school.lk" type="email" value={formData.email} onChange={(v) => handleChange('email', v)} />
+              <InputGroup label="Email" placeholder="mediaunit@school.lk" type="email" value={formData.email} onChange={(v) => handleChange('email', v)} />
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputGroup label="Password" placeholder="••••••••" type="password" value={formData.password} onChange={(v) => handleChange('password', v)} />
-                  <InputGroup label="Confirm Password" placeholder="••••••••" type="password" value={formData.confirmPassword} onChange={(v) => handleChange('confirmPassword', v)} />
+              <div className="space-y-4">
+                  <PasswordCriteria password={formData.password} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <InputGroup label="Password" placeholder="••••••••" type="password" value={formData.password} onChange={(v) => handleChange('password', v)} />
+                      <InputGroup label="Confirm Password" placeholder="••••••••" type="password" value={formData.confirmPassword} onChange={(v) => handleChange('confirmPassword', v)} />
+                  </div>
               </div>
           </div>
         </div>

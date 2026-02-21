@@ -55,7 +55,8 @@ const DashboardOverview: React.FC = () => {
   // Functionality: Search
   const filteredSchools = schools.filter(school => 
     (school.school_name && school.school_name.toLowerCase().includes(searchTerm.toLowerCase())) || 
-    (school.district && school.district.toLowerCase().includes(searchTerm.toLowerCase()))
+    (school.district && school.district.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (school.school_id && school.school_id.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Functionality: Deactivate / Activate

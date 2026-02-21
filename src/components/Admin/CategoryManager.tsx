@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Layers, Loader2, Tag, Hash, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { logSystemAction } from '../../lib/logger';
+import { addCategoryAdmin, deleteCategoryAdmin } from '../../lib/adminApi';
+import { secureLogger } from '../../lib/secureLogs';
 
 const CategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -40,16 +42,20 @@ const CategoryManager: React.FC = () => {
     const formattedCode = code.length === 1 ? `0${code}` : code;
 
     try {
-        const { error } = await supabase.from('categories').insert([{ 
-            name: name.trim(),
-            code: formattedCode,
-            division: division
-        }]);
+        // ========== SECURITY: Call RPC Function (Database-level authorization) ==========
+        const result = await addCategoryAdmin(name.trim(), formattedCode, division);
         
-        if (error) throw error;
+        if (!result.success) {
+            secureLogger.warn('Failed to add category', { 
+                name: name.trim(),
+                reason: result.message 
+            });
+            alert(result.message || "Failed to add category.");
+            return;
+        }
         
         // Log action
-        await logSystemAction('Add Category', `Created new category: ${name} (${division}) - Code: ${formattedCode}`);
+        await logSystemAction('Admin Add Category', `Created new category: ${name} (${division}) - Code: ${formattedCode}`);
 
         // Reset form
         setName('');
@@ -57,24 +63,33 @@ const CategoryManager: React.FC = () => {
         setDivision('Open');
         fetchCategories();
     } catch (error) {
-        console.error("Error adding category", error);
-        alert("Failed to add category. Ensure the Code is unique.");
+        secureLogger.error("Error adding category", { error: error instanceof Error ? error.message : 'Unknown error' });
+        alert("Failed to add category. Please try again.");
     }
   };
 
   const handleDeleteCategory = async (id: number, catName: string) => {
     if (window.confirm("Delete this category? This action cannot be undone.")) {
         try {
-            const { error } = await supabase.from('categories').delete().eq('id', id);
-            if (error) throw error;
+            // ========== SECURITY: Call RPC Function (Database-level authorization) ==========
+            const result = await deleteCategoryAdmin(id);
+            
+            if (!result.success) {
+                secureLogger.warn('Failed to delete category', { 
+                    categoryId: id,
+                    reason: result.message 
+                });
+                alert(result.message || "Failed to delete category.");
+                return;
+            }
             
             // Log action
-            await logSystemAction('Delete Category', `Deleted category: ${catName}`);
+            await logSystemAction('Admin Delete Category', `Deleted category: ${catName}`);
 
             setCategories(categories.filter(c => c.id !== id));
         } catch (error) {
-            console.error("Error deleting category", error);
-            alert("Failed to delete category.");
+            secureLogger.error("Error deleting category", { error: error instanceof Error ? error.message : 'Unknown error' });
+            alert("Failed to delete category. Please try again.");
         }
     }
   };

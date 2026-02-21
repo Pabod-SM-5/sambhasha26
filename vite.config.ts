@@ -4,27 +4,55 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),tailwindcss()],
-build: {
-    // 1. Chunk size warning එක මඟහැරීමට සීමාව වැඩි කිරීම
+  plugins: [react(), tailwindcss()],
+  server: {
+    // ========== SECURITY: SERVER HEADERS ==========
+    headers: {
+      // Prevent clickjacking attacks
+      'X-Frame-Options': 'DENY',
+      
+      // Prevent MIME type sniffing
+      'X-Content-Type-Options': 'nosniff',
+      
+      // Enable XSS protection in older browsers
+      'X-XSS-Protection': '1; mode=block',
+      
+      // NOTE: CSP headers are set by Vercel in production (vercel.json)
+      // Removing from dev server to avoid conflicts with Vite HMR injection
+      
+      // Referrer policy
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      
+      // Feature policy/Permissions policy
+      'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+    }
+  },
+  build: {
+    // ========== OUTPUT: SECURITY & OPTIMIZATION ==========
     chunkSizeWarningLimit: 1000,
     
-    // 2. වඩාත් ප්‍රබල ලෙස කේතය පිරිසිදු කිරීමට Terser භාවිතා කිරීම
     minify: 'terser',
     terserOptions: {
       compress: {
-        // සියලුම console logs සහ debugger statements ඉවත් කරයි
+        // Remove console logs and debugger in production
         drop_console: true,
         drop_debugger: true,
       },
+      format: {
+        // Mangle variable names for smaller output
+        comments: false,
+      }
     },
 
     rollupOptions: {
       output: {
-        // 3. විශාල Libraries වෙනම කොටස් වලට වෙන් කිරීම (Manual Chunking)
+        // ========== MANUAL CHUNKING: SPLIT VENDOR PACKAGES ==========
         manualChunks(id) {
+          // Separate vendor chunks for better caching
           if (id.includes('node_modules')) {
-            return id.toString().split('node_modules/')[1].split('/')[0].toString();
+            if (id.includes('@supabase')) return 'supabase';
+            if (id.includes('react')) return 'react-vendor';
+            return 'vendors';
           }
         },
       },
@@ -36,3 +64,4 @@ build: {
     globals: true,
   },
 })
+

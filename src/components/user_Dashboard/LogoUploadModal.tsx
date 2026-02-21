@@ -3,6 +3,9 @@ import { Upload, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { logSystemAction } from '../../lib/logger';
+import { validateFileMimeType, validateFileSize } from '../../lib/validators';
+import { rateLimiter, rateLimits } from '../../lib/rateLimiter';
+import { secureLogger } from '../../lib/secureLogs';
 
 interface LogoUploadModalProps {
   onUploadSuccess: () => void;
@@ -19,9 +22,26 @@ const LogoUploadModal: React.FC<LogoUploadModalProps> = ({ onUploadSuccess }) =>
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       
-      // Validate size (1MB)
-      if (selectedFile.size > 1 * 1024 * 1024) {
-        setErrorMsg("File size must be less than 1MB");
+      // ========== VALIDATION: FILE SIZE ==========
+      const sizeValidation = validateFileSize(selectedFile, 1);
+      if (!sizeValidation.valid) {
+        setErrorMsg(sizeValidation.error || "File size validation failed");
+        return;
+      }
+
+      // ========== VALIDATION: FILE MIME TYPE ==========
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const mimeValidation = validateFileMimeType(selectedFile, allowedMimeTypes);
+      if (!mimeValidation.valid) {
+        setErrorMsg(mimeValidation.error || "File type not allowed. Only JPEG, PNG, GIF, and WebP accepted");
+        return;
+      }
+
+      // ========== VALIDATION: FILE NAME EXTENSION CHECK ==========
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase() || '';
+      if (!allowedExtensions.includes(fileExtension)) {
+        setErrorMsg("Invalid file extension. Only image files are allowed.");
         return;
       }
 
@@ -38,48 +58,68 @@ const LogoUploadModal: React.FC<LogoUploadModalProps> = ({ onUploadSuccess }) =>
     setErrorMsg(null);
 
     try {
+        // ========== SECURITY: RATE LIMITING ==========
+        const rateLimit = rateLimits.fileUpload(user.id);
+        if (!rateLimiter.isAllowed(rateLimit.key, rateLimit.maxAttempts, rateLimit.windowMs)) {
+          const secondsRemaining = rateLimiter.getSecondsUntilReset(rateLimit.key);
+          setErrorMsg(`Upload limit reached. Please try again in ${secondsRemaining} seconds.`);
+          secureLogger.warn('File upload rate limit exceeded', { userId: user.id });
+          setUploading(false);
+          return;
+        }
+
         const userId = user.id;
         const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
         const fileName = `${userId}.${fileExt}`; // Strict naming
 
-        // 1. Upload to Storage (Upsert overwrites existing file)
+        // ========== STORAGE: UPLOAD FILE ==========
         const { error: uploadError } = await supabase.storage
             .from('school_logos')
             .upload(fileName, file, {
                 upsert: true,
-                cacheControl: '0' // Try to prevent CDN caching
+                cacheControl: '0' // Prevent CDN caching
             });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          secureLogger.error('Storage upload failed');
+          throw uploadError;
+        }
 
-        // 2. Get Public URL
+        // ========== RETRIEVE PUBLIC URL ==========
         const { data: urlData } = supabase.storage
             .from('school_logos')
             .getPublicUrl(fileName);
 
-        if (!urlData.publicUrl) throw new Error("Failed to retrieve public URL");
+        if (!urlData?.publicUrl) {
+          secureLogger.error('Failed to retrieve public URL');
+          throw new Error("Failed to retrieve public URL");
+        }
 
-        // 3. Append timestamp to force cache bust on clients
+        // ========== CACHE BUSTING: ADD TIMESTAMP ==========
         const timestamp = new Date().getTime();
         const publicUrlWithTimestamp = `${urlData.publicUrl}?t=${timestamp}`;
 
-        // 4. Update Profile
+        // ========== DATABASE: UPDATE PROFILE ==========
         const { error: dbError } = await supabase
             .from('profiles')
             .update({ logo_url: publicUrlWithTimestamp })
             .eq('id', userId);
 
-        if (dbError) throw dbError;
+        if (dbError) {
+          secureLogger.error('Database update failed');
+          throw dbError;
+        }
 
-        // 5. Log Action
+        // ========== LOGGING: LOG SUCCESS ==========
         await logSystemAction('LOGO_UPLOAD', 'User uploaded a new school logo');
+        secureLogger.info('Logo upload successful', { userId });
 
-        // 6. Success
+        // ========== SUCCESS CALLBACK ==========
         onUploadSuccess();
 
     } catch (error: any) {
-        console.error("Upload failed:", error);
-        setErrorMsg(error.message || "Failed to upload logo.");
+        secureLogger.error('Logo upload failed', { errorType: error?.name });
+        setErrorMsg(error.message || "Failed to upload logo. Please try again.");
     } finally {
         setUploading(false);
     }

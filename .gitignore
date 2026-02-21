@@ -27,7 +27,8 @@ dist-ssr
 # Environment variables (CRITICAL FOR CYBER SECURITY)
 .env
 .env.*
-!.env.example
+
 
 # Testing
 coverage/
+REPORTS/

@@ -4,6 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import DeleteContestantModal from './DeleteContestantModal';
 import { logSystemAction } from '../../lib/logger';
+import { deleteCompetitorAdmin } from '../../lib/adminApi';
+import { secureLogger } from '../../lib/secureLogs';
 
 const SchoolProfile: React.FC = () => {
   const { schoolId } = useParams();
@@ -93,12 +95,22 @@ const SchoolProfile: React.FC = () => {
     
     setIsDeleting(true);
     try {
-        const { error } = await supabase.from('competitors').delete().eq('id', selectedContestant.id);
-        if (error) throw error;
+        // ========== SECURITY: Call RPC Function (Database-level authorization) ==========
+        const result = await deleteCompetitorAdmin(selectedContestant.id);
+        
+        if (!result.success) {
+            secureLogger.warn('Failed to delete competitor', { 
+                competitorId: selectedContestant.id,
+                reason: result.message 
+            });
+            alert(result.message || "Delete failed. Please try again.");
+            setIsDeleting(false);
+            return;
+        }
         
         // Log the action
         await logSystemAction(
-            'Delete Contestant', 
+            'Admin Delete Competitor', 
             `Removed "${selectedContestant.name}" from ${profile.school_name}`
         );
 
@@ -114,8 +126,8 @@ const SchoolProfile: React.FC = () => {
         setSelectedContestant(null);
 
     } catch (error) {
-        console.error("Error deleting contestant", error);
-        alert("Delete failed");
+        secureLogger.error("Error deleting contestant", { error: error instanceof Error ? error.message : 'Unknown error' });
+        alert("Delete failed. Please try again.");
     } finally {
         setIsDeleting(false);
     }

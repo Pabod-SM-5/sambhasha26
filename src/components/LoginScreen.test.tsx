@@ -70,7 +70,7 @@ describe('LoginScreen', () => {
     fireEvent.change(getByPlaceholderText(/••••••••••••/i), { target: { value: 'wrongpass' } });
     fireEvent.click(getByRole('button', { name: /Secure Login/i }));
 
-    expect(await findByText(/Invalid email or password/i)).toBeInTheDocument();
+    expect(await findByText(/Invalid credentials/i)).toBeInTheDocument();
   });
 
   it('calls signInWithPassword with correct credentials', async () => {

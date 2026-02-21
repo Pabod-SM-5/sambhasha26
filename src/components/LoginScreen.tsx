@@ -2,8 +2,13 @@ import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight, Check, AlertCircle } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { setRememberMePreference } from '../lib/customStorageAdapter';
 import { logSystemAction } from '../lib/logger';
 import AuthLayout from './AuthLayout';
+import { validateEmail } from '../lib/validators';
+import { rateLimiter, rateLimits } from '../lib/rateLimiter';
+import { retryWithBackoff, retryConfigs } from '../lib/exponentialBackoff';
+import { secureLogger } from '../lib/secureLogs';
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -20,59 +25,96 @@ const LoginScreen: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      // 1. Authenticate User (v2 syntax)
+      // ========== SECURITY: RATE LIMITING ==========
+      const rateLimit = rateLimits.login(email);
+      if (!rateLimiter.isAllowed(rateLimit.key, rateLimit.maxAttempts, rateLimit.windowMs)) {
+        const secondsRemaining = rateLimiter.getSecondsUntilReset(rateLimit.key);
+        setErrorMsg(`Too many login attempts. Please try again in ${secondsRemaining} seconds.`);
+        secureLogger.warn('Login rate limit exceeded', { email });
+        setIsLoading(false);
+        return;
+      }
+
+      // ========== VALIDATION: EMAIL FORMAT ==========
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.valid) {
+        setErrorMsg(emailValidation.error || 'Please enter a valid email address');
+        setIsLoading(false);
+        return;
+      }
+
+      // ========== AUTHENTICATION: PERSISTENCE & SIGN IN ==========
+      // Save user preference for the custom adapter to read during login
+      setRememberMePreference(rememberMe);
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (authError) {
+          // Generic error messages to prevent information disclosure
           if (authError.message === 'Email not confirmed') {
-              throw new Error("Please verify your email address before logging in.");
+              setErrorMsg("Please verify your email address before logging in.");
+          } else if (authError.message.includes('Invalid login credentials')) {
+              setErrorMsg("Invalid credentials. Please check your email and password.");
+              secureLogger.warn('Failed login attempt - invalid credentials', { email });
+          } else {
+              setErrorMsg("Login failed. Please try again or contact support.");
+              secureLogger.error('Login authentication error', { status: authError.status, error: authError });
           }
-          if (authError.message.includes('Invalid login credentials')) {
-              throw new Error("Invalid email or password.");
-          }
-          throw authError;
+          setIsLoading(false);
+          return;
       }
 
       if (data.user) {
-        // 2. Fetch User Profile
+        // ========== FETCH PROFILE WITH EXPONENTIAL BACKOFF ==========
         let profile = null;
-        let attempts = 0;
-        
-        while (!profile && attempts < 3) {
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('*') 
-              .eq('id', data.user.id)
-              .maybeSingle();
+        try {
+          profile = await retryWithBackoff(
+            async () => {
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*') 
+                .eq('id', data.user.id)
+                .maybeSingle();
 
-            if (!profileError && profileData) {
-                profile = profileData;
-            } else {
-                await new Promise(r => setTimeout(r, 500));
-                attempts++;
+              if (profileError) throw profileError;
+              if (!profileData) throw new Error('Profile not found');
+              return profileData;
+            },
+            {
+              ...retryConfigs.profileFetch,
+              onRetry: (attempt, delay, error) => {
+                secureLogger.debug(`Retrying profile fetch - attempt ${attempt}, waiting ${delay}ms`);
+              }
             }
+          );
+        } catch (err: any) {
+          // සැබෑ දෝෂය logger එක වෙත යැවීම
+          secureLogger.error('Profile fetch failed after retries', { error: err?.message || err });
+          setErrorMsg("Unable to load your profile. Please try logging in again.");
+          await supabase.auth.signOut();
+          setIsLoading(false);
+          return;
         }
 
-        if (!profile) {
-             console.error("Profile fetch failed after retries.");
-             throw new Error("User profile initializing... Please try logging in again in a moment.");
-        }
-
-        // 3. Check Deactivation Status
+        // ========== CHECK ACCOUNT STATUS ==========
         if (profile.status === 'inactive') {
             await supabase.auth.signOut();
-            throw new Error("This account has been deactivated by the Administrator. Please contact the Media Unit.");
+            setErrorMsg("Your account has been deactivated. Please contact the Media Unit for assistance.");
+            secureLogger.warn('Login attempted with deactivated account', { email, userId: data.user.id });
+            setIsLoading(false);
+            return;
         }
 
         const role = profile?.role || 'user';
 
-        // 4. Log the Login Action
+        // ========== LOGGING: SUCCESSFUL LOGIN ==========
         await logSystemAction('USER_LOGIN', `Successful login for ${role.toUpperCase()}`);
+        secureLogger.info('User logged in successfully', { userId: data.user.id, role });
 
-        // 5. Navigate based on Role
+        // ========== NAVIGATION: ROLE-BASED REDIRECT ==========
         if (role === 'admin') {
           navigate('/admin');
         } else {
@@ -80,8 +122,16 @@ const LoginScreen: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('Login error:', error);
-      setErrorMsg(error.message || 'Failed to sign in.');
+      // 'undefined' error එක වළක්වා සැබෑ දෝෂය log කිරීම
+      secureLogger.error('Unexpected login error', { 
+        errorMessage: error?.message || 'Unknown error',
+        fullError: error 
+      }); 
+      
+      // සැබෑ දෝෂය (Actual Exception) browser console එකේ ක්ෂණිකව බලා ගැනීමට
+      console.error("Actual Exception caught in LoginScreen:", error); 
+
+      setErrorMsg('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
