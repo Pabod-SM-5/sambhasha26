@@ -1,105 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap');
 @import "tailwindcss";
 
 @theme {
-        /* -- Custom Color Palette -- */
-        
-        /* Silver / Platinum Accents */
-        --color-silver-300: #cbd5e1;
-        --color-silver-400: #9ca3af;
-        --color-silver-500: #6b7280;
-        --color-silver-600: #4b5563;
-        --color-silver-700: #374151;
-        --color-silver-accent: #E5E7EB;
-        --color-silver-glow: #d1d5db;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
 
-        /* Dark / Black Depths */
-        --color-dark-950: #000000;
-        --color-dark-900: #050505;
-        --color-dark-800: #0a0a0a;
-        --color-dark-700: #121212;
-        --color-dark-card: #0D0D0D;
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
 
-        /* -- Typography -- */
-        --font-serif: "Playfair Display", serif;
-        --font-display: "Cinzel", serif;
-        --font-sans: "Inter", sans-serif;
+/* Custom Scrollbar */
+body {
+  background-color: #09090b; /* zinc-950 */
+  color: #fafafa; /* zinc-50 */
+}
 
-        /* -- Animations -- */
-        --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        --animate-fade-in: fadeIn 0.5s ease-out forwards;
-        --animate-slide-up: slideUp 0.5s ease-out forwards;
-        --animate-slide-in-right: slideInRight 0.5s ease-out forwards;
-        --animate-zoom-in: zoomIn 0.3s ease-out forwards;
-        --animate-zoom-in-95: zoomIn95 0.2s ease-out forwards;
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
 
-        /* -- Keyframes -- */
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(1rem); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(1rem); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes zoomIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes zoomIn95 {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      }
+::-webkit-scrollbar-track {
+  background: #18181b; /* zinc-900 */
+}
 
-      /* Global Resets & Utilities */
-      body {
-        background-color: var(--color-dark-950);
-        color: #fff;
-        font-family: var(--font-sans);
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      
-      /* Utility: Hide Scrollbar */
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-      }
-      .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-      }
+::-webkit-scrollbar-thumb {
+  background: #3f3f46; /* zinc-700 */
+  border-radius: 4px;
+}
 
-      /* Utility: Custom Scrollbar */
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #333;
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #555;
-      }
-
-      /* Global Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: var(--color-dark-900);
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #333;
-        border-radius: 0;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #555;
-      }
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b; /* zinc-600 */
+}
