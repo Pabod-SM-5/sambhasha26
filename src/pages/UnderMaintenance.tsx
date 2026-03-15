@@ -69,16 +69,6 @@ export default function UnderMaintenance() {
               <Phone className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Yehen Wijewaranakula</p>
-              <p className="text-xs text-white/40 uppercase tracking-wider font-mono">Secretary - 0123456789</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[#141414]/50 border border-red-900/30 backdrop-blur-sm">
-            <div className="w-10 h-10 rounded-lg bg-red-900/20 flex items-center justify-center text-red-400 shrink-0">
-              <Phone className="w-5 h-5" />
-            </div>
-            <div>
               <p className="text-sm font-medium text-white">Pabod Sanjuna</p>
               <p className="text-xs text-white/40 uppercase tracking-wider font-mono">Organizer (System Admin) - 0123456789</p>
             </div>

@@ -60,10 +60,10 @@ export default function DashboardLayout() {
                   key={item.name}
                   to={item.path}
                   className={({ isActive }) =>
-                    `px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                    `px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 outline-none focus:outline-none ${
                       isActive
                         ? 'bg-[#141414] text-zinc-50 border border-red-900/30'
-                        : 'text-zinc-400 hover:text-zinc-50 hover:bg-[#141414]'
+                        : 'text-zinc-400 hover:text-zinc-50 hover:bg-[#141414] border border-transparent'
                     }`
                   }
                 >
@@ -77,7 +77,7 @@ export default function DashboardLayout() {
               <NavLink 
                 to="/settings"
                 className={({ isActive }) => 
-                  `p-2 rounded-full transition-colors cursor-pointer ${isActive ? 'text-zinc-50 bg-[#141414]' : 'text-zinc-400 hover:text-zinc-50 hover:bg-[#141414]'}`
+                  `p-2 rounded-full transition-colors cursor-pointer outline-none focus:outline-none ${isActive ? 'text-zinc-50 bg-[#141414]' : 'text-zinc-400 hover:text-zinc-50 hover:bg-[#141414]'}`
                 }
               >
                 <Settings className="w-5 h-5" />
@@ -134,10 +134,10 @@ export default function DashboardLayout() {
                     to={item.path}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) =>
-                      `block px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      `block px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 outline-none focus:outline-none ${
                         isActive
                           ? 'bg-[#141414] text-zinc-50 border border-red-900/30'
-                          : 'text-zinc-400 hover:text-zinc-50 hover:bg-[#141414]'
+                          : 'text-zinc-400 hover:text-zinc-50 hover:bg-[#141414] border border-transparent'
                       }`
                     }
                   >
@@ -160,7 +160,7 @@ export default function DashboardLayout() {
                       to="/settings"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={({ isActive }) => 
-                        `p-2 rounded-full transition-colors cursor-pointer ${isActive ? 'text-zinc-50 bg-[#141414]' : 'text-zinc-400 hover:text-zinc-50 hover:bg-[#141414]'}`
+                        `p-2 rounded-full transition-colors cursor-pointer outline-none focus:outline-none ${isActive ? 'text-zinc-50 bg-[#141414]' : 'text-zinc-400 hover:text-zinc-50 hover:bg-[#141414]'}`
                       }
                     >
                       <Settings className="w-5 h-5" />

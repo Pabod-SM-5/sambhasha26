@@ -4,7 +4,7 @@
  */
 
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AuthLayout from './components/AuthLayout';
 import DashboardLayout from './components/DashboardLayout';
 import LoginPage from './pages/Login';
@@ -25,6 +25,8 @@ import Rules from './pages/Rules';
 import Settings from './pages/Settings';
 import LoadingScreen from './components/LoadingScreen';
 
+import AddContestant from './pages/AddContestant';
+
 const targetPaths = ['/', '/login', '/register', '/admin', '/dashboard', '/admin/dashboard'];
 
 function getSection(path: string) {
@@ -32,7 +34,7 @@ function getSection(path: string) {
   if (path === '/admin') return 'admin-auth';
   if (path === '/') return 'maintenance';
   if (path.startsWith('/admin/')) return 'admin-dashboard';
-  if (['/dashboard', '/categories', '/rules', '/submissions', '/settings'].includes(path)) return 'user-dashboard';
+  if (['/dashboard', '/add-contestant', '/categories', '/rules', '/submissions', '/settings'].includes(path)) return 'user-dashboard';
   return 'unknown';
 }
 
@@ -95,6 +97,7 @@ export default function App() {
           {/* Dashboard Routes */}
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/add-contestant" element={<AddContestant />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/rules" element={<Rules />} />
             <Route path="/submissions" element={<Submissions />} />

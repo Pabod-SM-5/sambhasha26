@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AddContestantModal from '../components/dashboard/AddContestantModal';
+import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import DashboardFilters from '../components/dashboard/DashboardFilters';
 import ContestantTable from '../components/dashboard/ContestantTable';
@@ -19,9 +19,9 @@ const MOCK_CONTESTANTS = [
 const CATEGORIES = ["All", "Announcing", "Debating", "Creative Writing", "Photography", "Short Film"];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -49,7 +49,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Header Section */}
-      <DashboardHeader onAddContestant={() => setIsModalOpen(true)} />
+      <DashboardHeader onAddContestant={() => navigate('/add-contestant')} />
 
       {/* Filters & Search */}
       <DashboardFilters 
@@ -72,12 +72,6 @@ export default function Dashboard() {
           onPageChange={setCurrentPage}
         />
       </div>
-
-      {/* Add Contestant Modal */}
-      <AddContestantModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
     </div>
   );
 }

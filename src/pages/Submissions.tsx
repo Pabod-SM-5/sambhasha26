@@ -136,7 +136,7 @@ export default function Submissions() {
           <button
             type="submit"
             disabled={isSubmitting || submitted}
-            className={`w-full relative overflow-hidden rounded-xl py-4 px-6 flex items-center justify-center space-x-2 transition-all duration-300 ${
+            className={`w-full relative overflow-hidden rounded-xl py-4 px-6 flex items-center justify-center space-x-2 transition-all duration-300 outline-none focus:outline-none ${
               submitted 
                 ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
                 : 'bg-[#141414] hover:bg-[#1a1a1a] border border-red-900/30 text-white'

@@ -83,7 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link 
                 key={item.path}
                 to={item.path} 
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all group ${isActive(item.path) ? 'bg-[#141414] text-white border border-red-900/30 shadow-lg shadow-black/50' : 'text-zinc-400 hover:text-white hover:bg-[#141414]/50'}`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all group outline-none focus:outline-none ${isActive(item.path) ? 'bg-[#141414] text-white border border-red-900/30 shadow-lg shadow-black/50' : 'text-zinc-400 hover:text-white hover:bg-[#141414]/50 border border-transparent'}`}
               >
                 <item.icon className={`w-4 h-4 ${isActive(item.path) ? 'text-white' : 'text-zinc-400 group-hover:text-white'}`} />
                 {item.label}
@@ -133,7 +133,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={item.path}
                 to={item.path} 
                 onClick={() => setIsSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all group ${isActive(item.path) ? 'bg-[#141414] text-white border border-red-900/30 shadow-lg shadow-black/50' : 'text-zinc-400 hover:text-white hover:bg-[#141414]/50'}`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all group outline-none focus:outline-none ${isActive(item.path) ? 'bg-[#141414] text-white border border-red-900/30 shadow-lg shadow-black/50' : 'text-zinc-400 hover:text-white hover:bg-[#141414]/50 border border-transparent'}`}
               >
                 <item.icon className={`w-4 h-4 ${isActive(item.path) ? 'text-white' : 'text-zinc-400 group-hover:text-white'}`} />
                 {item.label}

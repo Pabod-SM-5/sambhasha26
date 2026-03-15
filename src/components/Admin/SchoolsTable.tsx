@@ -81,11 +81,11 @@ export default function SchoolsTable() {
       <div className="px-6 py-4 border-t border-red-900/30 bg-[#0a0a0a]/50 flex items-center justify-between text-xs text-white/40">
         <span>Showing 1-5 of 142 records</span>
         <div className="flex gap-1">
-          <button className="px-3 py-1.5 hover:bg-[#141414] rounded-lg disabled:opacity-50 transition-colors" disabled>Prev</button>
-          <button className="px-3 py-1.5 bg-[#141414] text-white rounded-lg transition-colors border border-red-900/30">1</button>
-          <button className="px-3 py-1.5 hover:bg-[#141414] rounded-lg transition-colors">2</button>
-          <button className="px-3 py-1.5 hover:bg-[#141414] rounded-lg transition-colors">3</button>
-          <button className="px-3 py-1.5 hover:bg-[#141414] rounded-lg transition-colors">Next</button>
+          <button className="px-3 py-1.5 hover:bg-[#141414] rounded-lg disabled:opacity-50 transition-colors border border-transparent outline-none focus:outline-none" disabled>Prev</button>
+          <button className="px-3 py-1.5 bg-[#141414] text-white rounded-lg transition-colors border border-red-900/30 outline-none focus:outline-none">1</button>
+          <button className="px-3 py-1.5 hover:bg-[#141414] rounded-lg transition-colors border border-transparent outline-none focus:outline-none">2</button>
+          <button className="px-3 py-1.5 hover:bg-[#141414] rounded-lg transition-colors border border-transparent outline-none focus:outline-none">3</button>
+          <button className="px-3 py-1.5 hover:bg-[#141414] rounded-lg transition-colors border border-transparent outline-none focus:outline-none">Next</button>
         </div>
       </div>
     </div>

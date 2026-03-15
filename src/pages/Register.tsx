@@ -112,23 +112,30 @@ export default function Register() {
               />
 
               {/* Form Actions */}
-              <div className="pt-6 border-t border-red-900/30 flex items-center justify-between">
-                <Link to="/login" className="text-xs text-zinc-400 hover:text-zinc-50 transition-colors">
-                  Already registered? Login here
-                </Link>
-                <button 
-                  type="button"
-                  className="px-6 py-2.5 sm:px-8 sm:py-3 relative overflow-hidden bg-[#0a0a0a] text-zinc-300 rounded-xl font-bold uppercase tracking-wider text-[10px] sm:text-xs hover:bg-[#141414] hover:text-zinc-100 transition-all duration-300 flex items-center gap-2 cursor-pointer hover:-translate-y-0.5"
-                >
-                  <div 
-                    className="absolute inset-0 opacity-[0.4] mix-blend-overlay pointer-events-none" 
-                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}
-                  />
-                  <span className="relative z-10 flex items-center gap-2">
-                    Complete Registration
-                    <ArrowRight className="w-4 h-4" />
-                  </span>
-                </button>
+              <div className="pt-6 border-t border-red-900/30">
+                <div className="mb-6 p-4 rounded-xl bg-red-900/10 border border-red-900/30">
+                  <p className="text-xs sm:text-sm text-red-400 font-medium leading-relaxed">
+                    <strong className="text-red-500">Important Notice:</strong> You will not be able to change your password after registration. Please ensure you remember your credentials.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Link to="/login" className="text-xs text-zinc-400 hover:text-zinc-50 transition-colors">
+                    Already registered? Login here
+                  </Link>
+                  <button 
+                    type="button"
+                    className="px-6 py-2.5 sm:px-8 sm:py-3 relative overflow-hidden bg-[#0a0a0a] text-zinc-300 rounded-xl font-bold uppercase tracking-wider text-[10px] sm:text-xs hover:bg-[#141414] hover:text-zinc-100 transition-all duration-300 flex items-center gap-2 cursor-pointer hover:-translate-y-0.5"
+                  >
+                    <div 
+                      className="absolute inset-0 opacity-[0.4] mix-blend-overlay pointer-events-none" 
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}
+                    />
+                    <span className="relative z-10 flex items-center gap-2">
+                      Complete Registration
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

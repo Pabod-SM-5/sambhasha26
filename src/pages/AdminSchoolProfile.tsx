@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import StatusBadge from '../components/Admin/ui/StatusBadge';
 import ActionButton from '../components/Admin/ui/ActionButton';
-import SearchFilterBar from '../components/Admin/ui/SearchFilterBar';
 import Pagination from '../components/Admin/ui/Pagination';
 
 // Mock Data for the School Profile
@@ -154,15 +153,36 @@ export default function AdminSchoolProfile() {
             </div>
           </div>
 
-          <SearchFilterBar 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedFilter={selectedCategory}
-            setSelectedFilter={setSelectedCategory}
-            filterOptions={CATEGORIES}
-            searchPlaceholder="Search students..."
-            filterLabel="Category"
-          />
+          {/* Search & Filter */}
+          <div className="flex flex-col sm:flex-row gap-4 bg-[#0a0a0a]/80 backdrop-blur-md p-4 rounded-2xl border border-red-900/30 shadow-lg shadow-black/50">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-4 w-4 text-white/40" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Search students..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-red-900/30 rounded-xl leading-5 bg-[#141414]/50 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-red-900/50 focus:border-red-900/50 sm:text-sm transition-colors"
+              />
+            </div>
+            <div className="sm:w-64 shrink-0">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="block w-full pl-3 pr-10 py-2 text-white bg-[#141414]/50 border border-red-900/30 focus:outline-none focus:ring-1 focus:ring-red-900/50 focus:border-red-900/50 sm:text-sm rounded-xl appearance-none cursor-pointer transition-colors"
+              >
+                {CATEGORIES.map((category) => (
+                  <option key={category} value={category} className="bg-[#1a1a1a] text-white">
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           {/* Table */}
           <div className="bg-[#0a0a0a]/80 backdrop-blur-md border border-red-900/30 rounded-2xl overflow-hidden shadow-lg shadow-black/50">
